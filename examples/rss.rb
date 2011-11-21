@@ -11,10 +11,16 @@ use :rss do
 	end
 end
 
-# this will be called on any event
-on :anything do |event|
-	# use email output
-	use :email do
-		to 'meh@paranoici.org'
+on -> e { e.tags.include?(:nsfw) } do |event|
+	with :email do
+		from 'rss-nsfw@events'
+		to   'meh@paranoici.org'
+	end.send(event)
+end
+
+on :anything_else do |event|
+	with :email do
+		from 'rss@events'
+		to   'meh@paranoici.org'
 	end.send(event)
 end
