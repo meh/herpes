@@ -8,6 +8,10 @@
 #  0. You just DO WHAT THE FUCK YOU WANT TO.
 #++
 
-Herpes::Module.define :rss do
+require 'rss'
 
+Herpes::Checker.define :rss do
+	def check
+
+	end
 end

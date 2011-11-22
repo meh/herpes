@@ -15,12 +15,16 @@ on -> e { e.tags.include?(:nsfw) } do |event|
 	with :email do
 		from 'rss-nsfw@events'
 		to   'meh@paranoici.org'
-	end.send(event)
+
+		send event
+	end
 end
 
 on :anything_else do |event|
 	with :email do
 		from 'rss@events'
 		to   'meh@paranoici.org'
-	end.send(event)
+
+		send event
+	end
 end
