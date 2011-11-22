@@ -10,8 +10,10 @@
 
 require 'rss'
 
-Herpes::Checker.define :rss do
-	def check
+Herpes::Generator.define :rss do
+	check_every 5.minutes
 
+	def check
+		puts 'nigger'
 	end
 end

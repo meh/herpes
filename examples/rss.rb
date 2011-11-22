@@ -1,3 +1,5 @@
+require 'herpes/rss'
+
 # load the RSS module
 use :rss do
 	# register sankaku with the following tags for the generated events
@@ -11,20 +13,22 @@ use :rss do
 	end
 end
 
-on -> e { e.tags.include?(:nsfw) } do |event|
-	with :email do
-		from 'rss-nsfw@events'
-		to   'meh@paranoici.org'
+from :rss do
+	on -> e { e.tags.include?(:nsfw) } do |event|
+		with :email do
+			from 'rss-nsfw@events'
+			to   'meh@paranoici.org'
 
-		send event
+			send event
+		end
 	end
-end
 
-on :anything_else do |event|
-	with :email do
-		from 'rss@events'
-		to   'meh@paranoici.org'
+	on :anything_else do |event|
+		with :email do
+			from 'rss@events'
+			to   'meh@paranoici.org'
 
-		send event
+			send event
+		end
 	end
 end

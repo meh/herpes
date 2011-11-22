@@ -1,0 +1,6 @@
+#! /usr/bin/env ruby
+require 'herpes'
+
+fail 'no configuration file passed' if ARGV.empty?
+
+Herpes.load(*ARGV).start!

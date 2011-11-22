@@ -42,15 +42,21 @@ class Herpes
 		end
 	end
 
-	def self.load (path)
-		new.tap { |o| o.instance_eval File.read(path), path, 1 }
+	def self.load (*path)
+		new.tap { |o| o.load(*path) }
 	end
 
 	def initialize
 		@workers   = Workers.new
-		@matchers  = []
+		@matchers  = Hash.new { |h, k| h[k] = [] }
 		@modules   = []
 		@callbacks = []
+	end
+
+	def load (*paths)
+		paths.each {|path|
+			instance_eval File.read(path), path, 1
+		}
 	end
 
 	def use (name, &block)
@@ -59,26 +65,38 @@ class Herpes
 		@modules << Module[name].use(self, &block)
 	end
 
+	def from (name, &block)
+		return unless block
+
+		@current = name
+		instance_eval &block
+		@current = nil
+	end
+
 	def on (matcher, &block)
 		return unless block
 
-		@matchers << Struct.new(:matcher, :block).new(matcher, block)
+		@matchers[@current] << Struct.new(:matcher, :block).new(matcher, block)
 	end
 
 	def dispatch (event)
 		return unless event.is_a?(Event)
 
-		dispatched = false
+		@matchers.each {|name, matchers|
+			next unless name.nil? || (event.respond_to?(:generated_by) && event.generated_by =~ name)
 
-		@matchers.map {|m|
-			begin
-				dispatched = true
+			dispatched = false
 
-				m.block.call(event)
-			end if
-				(m.matcher == :anything) ||
-				(m.matcher == :anything_else && !dispatched) ||
-				(m.matcher.respond_to?(:call) && m.matcher.call(event))
+			matchers.each {|m|
+				begin
+					dispatched = true
+
+					m.block.call(event)
+				end if
+					(m.matcher == :anything) ||
+					(m.matcher == :anything_else && !dispatched) ||
+					(m.matcher.respond_to?(:call) && m.matcher.call(event))
+			}
 		}
 	end
 
@@ -95,7 +113,7 @@ class Herpes
 	end
 
 	def until_next
-		@callbacks.min { |a, b| a.next_in <=> b.next_in }.next_in
+		@callbacks.min_by &:next_in
 	end
 
 	def sleep (time)
