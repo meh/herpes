@@ -18,11 +18,17 @@ class Herpes
 		attr_reader :time, :block, :last
 
 		def initialize (time, one_shot = false, &block)
+			raise ArgumentError, 'no block has been passed' unless block
+
 			@time     = time
 			@one_shot = one_shot
 			@block    = block
 
-			called!
+			if !one_shot?
+				@last = Time.now - time
+			else
+				called!
+			end
 		end
 
 		def one_shot?
@@ -34,7 +40,13 @@ class Herpes
 		end
 
 		def call (*args, &block)
-			block.call(*args, &block).tap { called! }
+			return if @calling
+
+			@calling = true
+			@block.call(*args, &block)
+			@calling = false
+
+			called!
 		end
 
 		def called!
@@ -46,11 +58,31 @@ class Herpes
 		new.tap { |o| o.load(*path) }
 	end
 
+	attr_reader :workers, :modules
+
 	def initialize
 		@workers   = Workers.new
 		@matchers  = Hash.new { |h, k| h[k] = [] }
 		@modules   = []
 		@callbacks = []
+		@pipes     = IO.pipe
+	end
+
+	def state (path = nil)
+		if path && path != @path
+			@path  = File.expand_path(path)
+			@state = Marshal.load(File.read(@path)) rescue nil
+		else
+			@state ||= {}
+		end
+	end
+
+	def save
+		return unless @state && @path
+
+		dump = Marshal.dump(@state)
+
+		File.open(@path, 'wb') { |f| f.write(dump) }
 	end
 
 	def load (*paths)
@@ -68,9 +100,10 @@ class Herpes
 	def from (name, &block)
 		return unless block
 
-		@current = name
-		instance_eval &block
-		@current = nil
+		@current, tmp = name, @current
+		result = instance_eval &block
+		@current = tmp
+		result
 	end
 
 	def on (matcher, &block)
@@ -102,22 +135,24 @@ class Herpes
 
 	def every (time, &block)
 		@callbacks << Callback.new(time, &block)
-
 		wake_up
 	end
 
 	def after (time, &block)
 		@callbacks << Callback.new(time, true, &block)
-
 		wake_up
 	end
 
 	def until_next
-		@callbacks.min_by &:next_in
+		next_in = @callbacks.min_by(&:next_in).next_in
+
+		next_in > 0 ? next_in : 0
+	rescue
+		10
 	end
 
 	def sleep (time)
-		(@pipes ||= IO.pipe).first.read
+		@pipes.first.read_nonblock 1337 rescue nil
 
 		IO.select([@pipes.first], nil, nil, time)
 	end
@@ -133,21 +168,24 @@ class Herpes
 		@running = true
 
 		while running?
+			sleep until_next
+
 			@callbacks.select {|callback|
 				callback.next_in <= 0
 			}.each {|callback|
-				callback.call
-
 				@callbacks.delete(callback) if callback.one_shot?
-			}
 
-			sleep until_next
+				workers.do {
+					callback.call
+				}
+			}
 		end
+
+		save
 	end
 
 	def stop!
 		@running = false;
-
 		wake_up
 	end
 end

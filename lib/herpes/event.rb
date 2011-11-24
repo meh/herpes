@@ -11,21 +11,17 @@
 class Herpes
 
 class Event
-	def initialize
+	def initialize (&block)
 		@data = {}
-	end
-
-	def with (&block)
-		dup.tap {|o|
-			o.instance_eval &block
-		}
+		
+		instance_eval &block
 	end
 
 	def method_missing (id, *args)
 		id = id.to_s.sub(/[=?]$/, '').to_sym
 
 		if args.length == 0
-			return @data[id]
+			@data[id]
 		else
 			if respond_to? "#{id}="
 				send "#{id}=", *args

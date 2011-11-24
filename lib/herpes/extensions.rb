@@ -28,6 +28,39 @@ class Numeric
 	end; alias day days
 end
 
+class Object
+	def plain_accessor (*names)
+		names.each {|name|
+			define_singleton_method name do |*args|
+				if args.empty?
+					instance_variable_get "@#{name}"
+				else
+					value = (args.length > 1) ? args : args.first
+
+					if value.nil?
+						remove_instance_variable "@#{name}"
+					else
+						instance_variable_set "@#{name}", value
+					end
+				end
+			end
+
+			define_singleton_method "#{name}?" do
+				instance_variable_get "@#{name}"
+			end
+
+			define_singleton_method "#{name}!" do
+				instance_variable_set "@#{name}", true
+			end
+
+			define_singleton_method "no_#{name}!" do
+				instance_variable_set "@#{name}", false
+			end
+
+		}
+	end
+end
+
 class Module
 	def plain_accessor (*names)
 		names.each {|name|
@@ -44,6 +77,19 @@ class Module
 					end
 				end
 			end
+
+			define_method "#{name}?" do
+				instance_variable_get "@#{name}"
+			end
+
+			define_method "#{name}!" do
+				instance_variable_set "@#{name}", true
+			end
+
+			define_method "no_#{name}!" do
+				instance_variable_set "@#{name}", false
+			end
+
 		}
 	end
 end

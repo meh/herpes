@@ -1,7 +1,11 @@
 require 'herpes/rss'
 
+state '~/.herpes'
+
 # load the RSS module
 use :rss do
+	check_every 2.minutes
+
 	# register sankaku with the following tags for the generated events
 	tag :anime, :manga, :japan, :nsfw do
 		register 'http://www.sankakucomplex.com/feed/'

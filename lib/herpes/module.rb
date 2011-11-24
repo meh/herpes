@@ -25,7 +25,10 @@ class Module
 		Module.all << new(name, *aliases, &block)
 	end
 
-	attr_reader :name, :aliases, :owner
+	extend Forwardable
+
+	attr_reader    :name, :aliases, :owner
+	def_delegators :owner, :state, :workers
 
 	def initialize (name, *aliases, &block)
 		@name    = name
@@ -37,8 +40,7 @@ class Module
 	def =~ (other)
 		return true if self == other
 
-		name.to_s.downcase == other.to_s.downcase ||
-		aliases.any? { |ali| ali.to_s.downcase == other.to_s.downcase }
+		name.to_s.downcase == other.to_s.downcase || aliases.any? { |a| a.to_s.downcase == other.to_s.downcase }
 	end
 
 	def default (&block)
@@ -52,7 +54,7 @@ class Module
 			raise ArgumentError, 'no block passed and a default is not present'
 		end
 
-		dup.tap { |o| o.instance_eval &block }
+		clone.tap { |o| o.instance_eval &block }
 	end
 
 	def use (*)
@@ -75,6 +77,8 @@ class Generator < Module
 		with(&block).tap {|o|
 			o.instance_eval {
 				@owner = owner
+
+				owned if respond_to? :owned
 
 				if respond_to? :check
 					@owner.every(check_every, &method(:check))
@@ -105,6 +109,9 @@ class Notifier < Module
 		with(&block).tap {|o|
 			o.instance_eval {
 				@owner = owner
+
+				owned if respond_to? :owned
+
 				@matchers.each {|matcher|
 					@owner.on *matcher.arguments, &matcher.block
 				}

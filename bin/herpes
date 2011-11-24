@@ -1,6 +1,13 @@
 #! /usr/bin/env ruby
+require 'rubygems'
 require 'herpes'
 
 fail 'no configuration file passed' if ARGV.empty?
 
-Herpes.load(*ARGV).start!
+herpes = Herpes.load(*ARGV)
+
+trap 'INT' do
+	herpes.stop!
+end
+
+herpes.start!
