@@ -32,7 +32,7 @@ from :rss do
 
 		class << event
 			def render
-				"#{title.strip_html} (#{link})\n\n" << description.strip_html.to_s
+				"#{title.strip_html} (#{link})\n\n#{description.strip_html}"
 			end
 		end
 	end
