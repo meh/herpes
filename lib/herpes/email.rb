@@ -15,6 +15,8 @@ Herpes::Notifier.define :email, :mail do
 
 	plain_accessor *@options
 
+	from 'herpes'
+
 	@attachments = {}
 
 	def via (name, options = {})
