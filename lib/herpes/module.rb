@@ -87,7 +87,13 @@ class Generator < Module
 		}
 	end
 
-	def dispatch (event)
+	def dispatch (event = nil, &block)
+		if block && !event
+			event = Event.new(&block)
+		end
+
+		raise ArgumentError, 'you did not pass an Event' unless event.is_a?(Event)
+
 		event.generated_by self
 
 		owner.dispatch(event)

@@ -61,11 +61,15 @@ class Herpes
 	attr_reader :workers, :modules
 
 	def initialize
-		@workers   = Workers.new
-		@matchers  = Hash.new { |h, k| h[k] = [] }
 		@modules   = []
+		@workers = Workers.new
+		@pipes   = IO.pipe
+
+		@before   = Hash.new { |h, k| h[k] = [] }
+		@matchers = Hash.new { |h, k| h[k] = [] }
+		@after    = Hash.new { |h, k| h[k] = [] }
+
 		@callbacks = []
-		@pipes     = IO.pipe
 	end
 
 	def state (path = nil)
@@ -91,6 +95,12 @@ class Herpes
 		}
 	end
 
+	def with (name, &block)
+		raise ArgumentError, "#{name} not found" unless Module[name]
+
+		Module[name].with(&block)
+	end
+
 	def use (name, &block)
 		raise ArgumentError, "#{name} not found" unless Module[name]
 
@@ -106,17 +116,35 @@ class Herpes
 		result
 	end
 
+	def before (&block)
+		@before[@current] = block
+	end
+
 	def on (matcher, &block)
 		return unless block
 
 		@matchers[@current] << Struct.new(:matcher, :block).new(matcher, block)
 	end
 
-	def dispatch (event)
-		return unless event.is_a?(Event)
+	def after (&block)
+		@after[@current] = block
+	end
+
+	def dispatch (event = nil, &block)
+		if block && !event
+			event = Event.new(&block)
+		end
+
+		raise ArgumentError, 'you did not pass an Event' unless event.is_a?(Event)
+
+		@before.each {|name, block|
+			next unless name.nil? || (event.generated_by && event.generated_by =~ name)
+
+			block.call(event)
+		}
 
 		@matchers.each {|name, matchers|
-			next unless name.nil? || (event.respond_to?(:generated_by) && event.generated_by =~ name)
+			next unless name.nil? || (event.generated_by && event.generated_by =~ name)
 
 			dispatched = false
 
@@ -130,6 +158,12 @@ class Herpes
 					(m.matcher == :anything_else && !dispatched) ||
 					(m.matcher.respond_to?(:call) && m.matcher.call(event))
 			}
+		}
+
+		@after.each {|name, block|
+			next unless name.nil? || (event.generated_by && event.generated_by =~ name)
+
+			block.call(event)
 		}
 	end
 

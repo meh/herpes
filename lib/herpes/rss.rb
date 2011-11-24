@@ -31,8 +31,8 @@ Herpes::Generator.define :rss do
 		@group = tmp
 	end
 
-	def register (url)
-		@rss << Struct.new(:url, :tags, :group).new(url, @tags.flatten, @group)
+	def register (url, name = nil)
+		@rss << Struct.new(:url, :name, :tags, :group).new(url, name, @tags.flatten, @group)
 	end
 
 	def check
@@ -48,10 +48,11 @@ Herpes::Generator.define :rss do
 					event = Herpes::Event.new {
 						tags  r.tags
 						group r.group
+						name  r.name
 
-						title       item.title
-						link        item.link
-						description item.description
+						title       item.title.dup
+						link        item.link.dup
+						description item.description.dup
 						date        item.date
 					}
 
