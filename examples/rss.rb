@@ -39,8 +39,8 @@ from :rss do
 
 	on -> e { e.tags.include?(:nsfw) } do |event|
 		with :email do
-			from    'rss-nsfw@herpes'
-			to      'meh@paranoici.org'
+			from    'rss-nsfw'
+			to      'herpes'
 			subject event.title.strip_html
 
 			via :procmail
@@ -51,8 +51,8 @@ from :rss do
 
 	on :anything_else do |event|
 		with :email do
-			from    'rss@herpes'
-			to      'meh@paranoici.org'
+			from    'rss'
+			to      'herpes'
 			subject event.title.strip_html
 
 			via :procmail
