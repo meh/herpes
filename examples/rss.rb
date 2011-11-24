@@ -22,7 +22,7 @@ from :rss do
 	before do |event|
 		require 'nokogiri'
 
-		[event.title, event.description].each {|obj|
+		[event.channel.title, event.title, event.description].each {|obj|
 			class << obj
 				def strip_html
 					Nokogiri::HTML(self).search('//text()').text
@@ -39,7 +39,7 @@ from :rss do
 
 	on -> e { e.tags.include?(:nsfw) } do |event|
 		with :email do
-			from    'rss-nsfw'
+			from    "#{event.channel.title.strip_html} <rss-nsfw@herpes>"
 			to      'herpes'
 			subject event.title.strip_html
 
@@ -51,7 +51,7 @@ from :rss do
 
 	on :anything_else do |event|
 		with :email do
-			from    'rss'
+			from    "#{event.channel.title.strip_html} <rss@herpes>"
 			to      'herpes'
 			subject event.title.strip_html
 

@@ -50,6 +50,8 @@ Herpes::Generator.define :rss do
 						group r.group
 						name  r.name
 
+						channel p.channel.dup
+
 						title       item.title.dup
 						link        item.link.dup
 						description item.description.dup

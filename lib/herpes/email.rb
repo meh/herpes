@@ -22,7 +22,7 @@ Herpes::Notifier.define :email, :mail do
 			procmail = `which procmail`.chomp
 			procmail = procmail.empty? ? '/usr/bin/procmail' : procmail
 
-			via :sendmail, location: "#{options[:location] || procmail} -f #{from} #"
+			via :sendmail, location: "#{options[:location] || procmail} -f - #"
 		else
 			@via         = name
 			@via_options = options
