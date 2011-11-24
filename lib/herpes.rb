@@ -10,7 +10,6 @@
 
 require 'herpes/version'
 require 'herpes/extensions'
-require 'herpes/workers'
 require 'herpes/event'
 require 'herpes/module'
 
@@ -74,11 +73,10 @@ class Herpes
 		new.load(*path)
 	end
 
-	attr_reader :workers, :modules
+	attr_reader :modules
 
 	def initialize
 		@modules = []
-		@workers = Workers.new
 		@pipes   = IO.pipe
 
 		@before   = Hash.new { |h, k| h[k] = [] }
@@ -231,7 +229,7 @@ class Herpes
 
 				callback.gonna_call!
 
-				workers.do {
+				Thread.new {
 					callback.call
 				}
 			}

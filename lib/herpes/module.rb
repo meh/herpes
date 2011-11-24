@@ -28,7 +28,7 @@ class Module
 	extend Forwardable
 
 	attr_reader    :name, :aliases, :owner
-	def_delegators :owner, :state, :workers
+	def_delegators :owner, :state
 
 	def initialize (name, *aliases, &block)
 		@name    = name
