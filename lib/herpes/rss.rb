@@ -43,19 +43,32 @@ Herpes::Generator.define :rss do
 
 			RSS::Parser.parse(open(r.url).read, false).tap {|p|
 				p.items.each {|item|
-					next if state[:rss][r.url].member? [item.date, item.title]
+					if p.is_a?(RSS::Atom::Feed)
+						next if state[:rss][r.url].member? [item.updated.content, item.title.content]
+					else
+						next if state[:rss][r.url].member? [item.date, item.title]
+					end
 
 					event = Herpes::Event.new {
 						tags  r.tags
 						group r.group
 						name  r.name
 
-						channel p.channel.dup
+						if p.is_a?(RSS::Atom::Feed)
+							channel Struct.new(:title, :date, :link).new(p.title.content.dup, p.updated.content, p.link.href.dup)
 
-						title       item.title.dup
-						link        item.link.dup
-						description item.description.dup
-						date        item.date
+							title       item.title.content.dup
+							link        item.link.href.dup
+							description item.content.content.dup
+							date        item.updated.content
+						else
+							channel p.channel.dup
+
+							title       item.title.dup
+							link        item.link.dup
+							description item.description.dup
+							date        item.date
+						end
 					}
 
 					if digest
