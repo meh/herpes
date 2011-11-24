@@ -39,29 +39,44 @@ class Herpes
 			time - (Time.now - last)
 		end
 
-		def call (*args, &block)
-			return if @calling
+		def gonna_call!
+			@calling = :gonna
+		end
 
-			@calling = true
-			@block.call(*args, &block)
-			@calling = false
+		def gonna_call?
+			@calling == :gonna
+		end
 
-			called!
+		def calling!
+			@calling = :gonna
 		end
 
 		def called!
-			@last = Time.now
+			@last    = Time.now
+			@calling = false
+		end
+
+		def calling?
+			@calling == true
+		end
+
+		def call (*args, &block)
+			return if calling?
+
+			calling!
+			@block.call(*args, &block)
+			called!
 		end
 	end
 
 	def self.load (*path)
-		new.tap { |o| o.load(*path) }
+		new.load(*path)
 	end
 
 	attr_reader :workers, :modules
 
 	def initialize
-		@modules   = []
+		@modules = []
 		@workers = Workers.new
 		@pipes   = IO.pipe
 
@@ -93,6 +108,8 @@ class Herpes
 		paths.each {|path|
 			instance_eval File.read(path), path, 1
 		}
+
+		self
 	end
 
 	def with (name, &block)
@@ -206,8 +223,12 @@ class Herpes
 
 			@callbacks.select {|callback|
 				callback.next_in <= 0
-			}.each {|callback|
+			}.uniq.each {|callback|
 				@callbacks.delete(callback) if callback.one_shot?
+
+				next if callback.gonna_call?
+
+				callback.gonna_call!
 
 				workers.do {
 					callback.call

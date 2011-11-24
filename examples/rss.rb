@@ -7,18 +7,20 @@ state '~/.herpes'
 use :rss do
 	check_every 2.minutes
 
-	# register sankaku with the following tags for the generated herpes
+	# register sankaku with the following tags for the generated events
 	tag :anime, :manga, :japan, :nsfw do
 		register 'http://www.sankakucomplex.com/feed/'
 	end
 
-	# register incomaemeglio in the blog group
+	# register incomaemeglio in the blog group and give it a name
 	group :blog do
 		register 'http://feeds.feedburner.com/incomaemeglio', :smeriglia
 	end
 end
 
+# only events coming from the RSS module
 from :rss do
+	# define some common helper methods on every event
 	before do |event|
 		require 'nokogiri'
 
@@ -37,6 +39,7 @@ from :rss do
 		end
 	end
 
+	# for events that have the nsfw tag
 	on -> e { e.tags.include?(:nsfw) } do |event|
 		with :email do
 			from    "#{event.channel.title.strip_html} <rss-nsfw@herpes>"
