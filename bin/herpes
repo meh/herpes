@@ -1,6 +1,10 @@
 #! /usr/bin/env ruby
-require 'rubygems'
 require 'herpes'
+
+if ARGV.first == '-v' or ARGV.first == '--version'
+	puts Herpes.version
+	exit
+end
 
 fail 'no configuration file passed' if ARGV.empty?
 

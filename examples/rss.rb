@@ -13,8 +13,10 @@ use :rss do
 	end
 
 	# register incomaemeglio in the blog group and give it a name
+	# also register github's blog in the blog group
 	group :blog do
 		register 'http://feeds.feedburner.com/incomaemeglio', :smeriglia
+		register 'https://github.com/blog.atom'
 	end
 end
 
