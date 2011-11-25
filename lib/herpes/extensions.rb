@@ -9,6 +9,7 @@
 #++
 
 require 'forwardable'
+require 'threadpool'
 
 class Numeric
 	def seconds
@@ -56,7 +57,6 @@ class Object
 			define_singleton_method "no_#{name}!" do
 				instance_variable_set "@#{name}", false
 			end
-
 		}
 	end
 end
@@ -89,7 +89,6 @@ class Module
 			define_method "no_#{name}!" do
 				instance_variable_set "@#{name}", false
 			end
-
 		}
 	end
 end

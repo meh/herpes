@@ -42,7 +42,7 @@ Herpes::Generator.define :rss do
 			(state[:rss] ||= {})[r.url] ||= []
 
 			RSS::Parser.parse(open(r.url).read, false).tap {|p|
-				p.items.each {|item|
+				p.items.reverse_each {|item|
 					if p.is_a?(RSS::Atom::Feed)
 						next if state[:rss][r.url].member? [item.updated.content, item.title.content]
 					else
@@ -77,12 +77,20 @@ Herpes::Generator.define :rss do
 						dispatch(event)
 					end
 
-					state[:rss][r.url].push [item.date, item.title]
+					if p.is_a?(RSS::Atom::Feed)
+						state[:rss][r.url].push [item.updated.content, item.title.content]
+					else
+						state[:rss][r.url].push [item.date, item.title]
+					end
 				}
 
 				state[:rss][r.url].reject! {|(date, title)|
 					p.items.none? {|item|
-						item.date == date && item.title == title
+						if p.is_a?(RSS::Atom::Feed)
+							 item.updated.content == date && item.title.content == title
+						else
+							item.date == date && item.title == title
+						end
 					}
 				}
 			}

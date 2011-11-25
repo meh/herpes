@@ -73,17 +73,25 @@ class Herpes
 		new.load(*path)
 	end
 
-	attr_reader :modules
+	include Awakenable
+	extend Forwardable
+
+	attr_reader    :modules
+	def_delegators :@pool, :do, :process
 
 	def initialize
+		@pool    = ThreadPool.new
 		@modules = []
-		@pipes   = IO.pipe
 
 		@before   = Hash.new { |h, k| h[k] = [] }
 		@matchers = Hash.new { |h, k| h[k] = [] }
 		@after    = Hash.new { |h, k| h[k] = [] }
 
 		@callbacks = []
+	end
+
+	def workers (number)
+		@pool.resize(number)
 	end
 
 	def state (path = nil)
@@ -196,19 +204,9 @@ class Herpes
 	def until_next
 		next_in = @callbacks.min_by(&:next_in).next_in
 
-		next_in > 0 ? next_in : 0
+		next_in > 0 ? next_in : nil
 	rescue
-		10
-	end
-
-	def sleep (time)
-		@pipes.first.read_nonblock 1337 rescue nil
-
-		IO.select([@pipes.first], nil, nil, time)
-	end
-
-	def wake_up
-		@pipes.last.write 'x'
+		nil
 	end
 
 	def running?; !!@running; end
@@ -229,7 +227,7 @@ class Herpes
 
 				callback.gonna_call!
 
-				Thread.new {
+				process {
 					callback.call
 				}
 			}
@@ -239,7 +237,9 @@ class Herpes
 	end
 
 	def stop!
-		@running = false;
+		@running = false
 		wake_up
+
+		@pool.kill
 	end
 end

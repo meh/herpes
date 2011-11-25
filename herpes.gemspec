@@ -14,5 +14,5 @@ Gem::Specification.new {|s|
 	s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
 	s.require_paths = ['lib']
 
-  s.add_dependency 'actionpool'
+	s.add_dependency 'threadpool'
 }
