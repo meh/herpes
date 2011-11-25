@@ -43,11 +43,11 @@ Herpes::Generator.define :rss do
 
 			RSS::Parser.parse(open(r.url).read, false).tap {|p|
 				p.items.reverse_each {|item|
-					if p.is_a?(RSS::Atom::Feed)
-						next if state[:rss][r.url].member? [item.updated.content, item.title.content]
+					next if state[:rss][r.url].member?(if p.is_a?(RSS::Atom::Feed)
+						item.link.href
 					else
-						next if state[:rss][r.url].member? [item.date, item.title]
-					end
+						item.link
+					end)
 
 					event = Herpes::Event.new {
 						tags  r.tags
@@ -77,19 +77,19 @@ Herpes::Generator.define :rss do
 						dispatch(event)
 					end
 
-					if p.is_a?(RSS::Atom::Feed)
-						state[:rss][r.url].push [item.updated.content, item.title.content]
+					state[:rss][r.url].push(if p.is_a?(RSS::Atom::Feed)
+						item.link.href
 					else
-						state[:rss][r.url].push [item.date, item.title]
-					end
+						item.link
+					end)
 				}
 
-				state[:rss][r.url].reject! {|(date, title)|
+				state[:rss][r.url].reject! {|link|
 					p.items.none? {|item|
-						if p.is_a?(RSS::Atom::Feed)
-							 item.updated.content == date && item.title.content == title
+						link == if p.is_a?(RSS::Atom::Feed)
+							item.link.href
 						else
-							item.date == date && item.title == title
+							item.link
 						end
 					}
 				}
