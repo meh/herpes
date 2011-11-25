@@ -10,6 +10,6 @@
 
 class Herpes
 	def self.version
-		'0.0.1.1'
+		'0.0.1.2'
 	end
 end
