@@ -11,7 +11,7 @@ fail 'no configuration file passed' if ARGV.empty?
 herpes = Herpes.load(*ARGV)
 
 END {
-	herpes.stop!
+	herpes.stop
 }
 
-herpes.start!
+herpes.start

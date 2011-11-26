@@ -48,7 +48,7 @@ class Herpes
 		end
 
 		def calling!
-			@calling = :gonna
+			@calling = true
 		end
 
 		def called!
@@ -60,12 +60,14 @@ class Herpes
 			@calling == true
 		end
 
-		def call (*args, &block)
+		def call (herpes, &block)
 			return if calling?
 
 			calling!
-			@block.call(*args, &block)
+			@block.call(&block)
 			called!
+
+			herpes.wake_up
 		end
 	end
 
@@ -106,9 +108,11 @@ class Herpes
 	def save
 		return unless @state && @path
 
-		dump = Marshal.dump(@state)
+		Marshal.dump(@state).tap {|dump|
+			File.open(@path, 'wb') { |f| f.write(dump) }
+		}
 
-		File.open(@path, 'wb') { |f| f.write(dump) }
+		self
 	end
 
 	def load (*paths)
@@ -202,21 +206,27 @@ class Herpes
 	end
 
 	def until_next
-		next_in = @callbacks.min_by(&:next_in).next_in
+		callbacks = @callbacks.reject(&:calling?).reject(&:gonna_call?)
 
-		next_in > 0 ? next_in : nil
-	rescue
-		nil
+		return if callbacks.empty?
+
+		next_in = callbacks.min_by(&:next_in).next_in
+
+		next_in > 0 ? next_in : 0
 	end
 
-	def running?; !!@running; end
-	def stopped?; !@running;  end
+	def running?; @running; end
+	def stopped?; @stopped; end
 
-	def start!
+	def start
 		@running = true
 
 		while running?
-			sleep until_next
+			begin
+				sleep until_next
+			rescue Interrupt
+				break
+			end
 
 			@callbacks.select {|callback|
 				callback.next_in <= 0
@@ -228,18 +238,27 @@ class Herpes
 				callback.gonna_call!
 
 				process {
-					callback.call
+					callback.call(self)
 				}
 			}
 		end
 
 		save
+
+		@stopped = true
 	end
 
 	def stop!
 		@running = false
+
 		wake_up
 
 		@pool.kill
+	end
+
+	def stop
+		stop!
+
+		sleep 0.01 until stopped?
 	end
 end
