@@ -15,14 +15,15 @@ require 'herpes/module'
 
 class Herpes
 	class Callback
-		attr_reader :time, :block, :last
+		attr_reader :time, :discriminator, :block, :last
 
-		def initialize (time, one_shot = false, &block)
+		def initialize (time, discriminator, one_shot = false, &block)
 			raise ArgumentError, 'no block has been passed' unless block
 
-			@time     = time
-			@one_shot = one_shot
-			@block    = block
+			@time          = time
+			@discriminator = discriminator
+			@one_shot      = one_shot
+			@block         = block
 
 			if !one_shot?
 				@last = Time.now - time
@@ -105,6 +106,12 @@ class Herpes
 		end
 	end
 
+	def save_every (time)
+		cancel { |c| c.discriminator == self }
+
+		every time, self do save end
+	end
+
 	def save
 		return unless @state && @path
 
@@ -145,17 +152,30 @@ class Herpes
 	end
 
 	def before (&block)
-		@before[@current] = block
+		return unless block
+
+		@before[@current] << block
+		@before[@current].uniq!
+
+		self
 	end
 
 	def on (matcher, &block)
 		return unless block
 
 		@matchers[@current] << Struct.new(:matcher, :block).new(matcher, block)
+		@matchers[@current].uniq!
+
+		self
 	end
 
 	def after (&block)
-		@after[@current] = block
+		return unless block
+
+		@after[@current] << block
+		@after[@current].uniq!
+
+		self
 	end
 
 	def dispatch (event = nil, &block)
@@ -165,10 +185,10 @@ class Herpes
 
 		raise ArgumentError, 'you did not pass an Event' unless event.is_a?(Event)
 
-		@before.each {|name, block|
+		@before.each {|name, blocks|
 			next unless name.nil? || (event.generated_by && event.generated_by =~ name)
 
-			block.call(event)
+			blocks.each { |b| b.call(event) }
 		}
 
 		@matchers.each {|name, matchers|
@@ -188,20 +208,25 @@ class Herpes
 			}
 		}
 
-		@after.each {|name, block|
+		@after.each {|name, blocks|
 			next unless name.nil? || (event.generated_by && event.generated_by =~ name)
 
-			block.call(event)
+			blocks.each { |b| b.call(event) }
 		}
 	end
 
-	def every (time, &block)
-		@callbacks << Callback.new(time, &block)
+	def every (time, discriminator = nil, &block)
+		@callbacks << Callback.new(time, discriminator, &block)
 		wake_up
 	end
 
-	def after (time, &block)
-		@callbacks << Callback.new(time, true, &block)
+	def once (time, discriminator = nil, &block)
+		@callbacks << Callback.new(time, discriminator, true, &block)
+		wake_up
+	end; alias once_after once
+
+	def cancel (&block)
+		@callbacks.reject!(&block)
 		wake_up
 	end
 
@@ -230,10 +255,10 @@ class Herpes
 
 			@callbacks.select {|callback|
 				callback.next_in <= 0
-			}.uniq.each {|callback|
+			}.each {|callback|
 				@callbacks.delete(callback) if callback.one_shot?
 
-				next if callback.gonna_call?
+				next if callback.gonna_call? or callback.calling?
 
 				callback.gonna_call!
 

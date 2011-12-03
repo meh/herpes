@@ -10,7 +10,7 @@
 
 require 'pony'
 
-Herpes::Notifier.define :email, :mail do
+Herpes::Module.define :email, :mail do
 	@options = %w(from to cc bcc sender subject headers charset text_part_charset message_id via via_options attachments)
 
 	plain_accessor *@options

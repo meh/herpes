@@ -2,6 +2,7 @@ require 'herpes/rss'
 require 'herpes/email'
 
 state '~/.herpes'
+save_every 5.minutes
 
 # load the RSS module
 use :rss do
@@ -18,10 +19,7 @@ use :rss do
 		register 'http://feeds.feedburner.com/incomaemeglio', :smeriglia
 		register 'https://github.com/blog.atom'
 	end
-end
 
-# only events coming from the RSS module
-from :rss do
 	# define some common helper methods on every event
 	before do |event|
 		require 'nokogiri'

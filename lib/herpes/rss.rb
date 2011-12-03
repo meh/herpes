@@ -11,7 +11,7 @@
 require 'rss'
 require 'open-uri'
 
-Herpes::Generator.define :rss do
+Herpes::Module.define :rss do
 	plain_accessor :digest
 
 	check_every 5.minutes
@@ -21,18 +21,25 @@ Herpes::Generator.define :rss do
 
 	def tag (*tags, &block)
 		@tags.push tags
-		instance_eval &block
+		result = instance_eval &block
 		@tags.pop
+
+		result
 	end
 
 	def group (group, &block)
 		@group, tmp = group, @group
-		instance_eval &block
+		result = instance_eval &block
 		@group = tmp
+
+		result
 	end
 
 	def register (url, name = nil)
 		@rss << Struct.new(:url, :name, :tags, :group).new(url, name, @tags.flatten, @group)
+		@rss.uniq!
+
+		self
 	end
 
 	def check
