@@ -41,6 +41,8 @@ class Herpes
 		end
 
 		def gonna_call!
+			return if calling?
+
 			@calling = :gonna
 		end
 
@@ -66,8 +68,8 @@ class Herpes
 
 			calling!
 			@block.call(&block)
+		ensure
 			called!
-
 			herpes.wake_up
 		end
 	end
