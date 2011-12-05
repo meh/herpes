@@ -249,7 +249,7 @@ class Herpes
 		@running = true
 
 		while running?
-			sleep until_next or break
+			sleep until_next
 
 			@callbacks.select {|callback|
 				callback.next_in <= 0 && !(callback.gonna_call? || callback.calling?)
@@ -263,7 +263,7 @@ class Herpes
 				}
 			}
 		end
-
+	ensure
 		save
 
 		@stopped = true
