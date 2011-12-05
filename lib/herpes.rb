@@ -249,18 +249,12 @@ class Herpes
 		@running = true
 
 		while running?
-			begin
-				sleep until_next
-			rescue Interrupt
-				break
-			end
+			sleep until_next or break
 
 			@callbacks.select {|callback|
-				callback.next_in <= 0
+				callback.next_in <= 0 && !(callback.gonna_call? || callback.calling?)
 			}.each {|callback|
 				@callbacks.delete(callback) if callback.one_shot?
-
-				next if callback.gonna_call? or callback.calling?
 
 				callback.gonna_call!
 
