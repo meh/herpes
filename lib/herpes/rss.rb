@@ -100,7 +100,7 @@ Herpes::Module.define :rss do
 						end
 					}
 				}
-			}
+			} rescue warn $!
 		}
 
 		if digest
