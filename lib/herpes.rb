@@ -26,7 +26,7 @@ class Herpes
 			@block         = block
 
 			if !one_shot?
-				@last = Time.now - time
+				@last = Time.at 0
 			else
 				called!
 			end
