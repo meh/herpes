@@ -100,7 +100,7 @@ class Herpes
 	end
 
 	def log_at (path = nil)
-		path ? @log_at = path : @log_at
+		path ? @log_at = File.expand_path(path) : @log_at
 	end
 
 	def state (path = nil)
@@ -272,7 +272,7 @@ class Herpes
 		  f.write "[#{Time.now}] "
 			f.write "From: #{caller[0, 1].join "\n"}\n"
 			f.write "#{e.class}: #{e.message}\n"
-			f.write e.backtrace.collect.join "\n"
+			f.write e.backtrace.to_a.join "\n"
 			f.write "\n\n"
 		} if log_at
 	ensure
