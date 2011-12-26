@@ -99,6 +99,10 @@ class Herpes
 		@pool.resize(number)
 	end
 
+	def log_at (path = nil)
+		path ? @log_at = path : @log_at
+	end
+
 	def state (path = nil)
 		if path && path != @path
 			@path  = File.expand_path(path)
@@ -263,6 +267,14 @@ class Herpes
 				}
 			}
 		end
+	rescue Exception => e
+		File.open(log_at, ?a) {|f|
+		  f.write "[#{Time.now}] "
+			f.write "From: #{caller[0, 1].join "\n"}\n"
+			f.write "#{e.class}: #{e.message}\n"
+			f.write e.backtrace.collect.join "\n"
+			f.write "\n\n"
+		} if log_at
 	ensure
 		save
 
