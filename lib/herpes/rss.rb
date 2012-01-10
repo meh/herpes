@@ -48,7 +48,11 @@ Herpes::Module.define :rss do
 		@rss.each {|r|
 			(state[:rss] ||= {})[r.url] ||= []
 
-			RSS::Parser.parse(open(r.url).read, false).tap {|p|
+			content = begin
+				open(r.url).read
+			rescue SocketError; end or next
+
+			RSS::Parser.parse(content, false).tap {|p|
 				p.items.reverse_each {|item|
 					next if state[:rss][r.url].member?(if p.is_a?(RSS::Atom::Feed)
 						item.link.href

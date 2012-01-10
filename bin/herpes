@@ -10,8 +10,10 @@ fail 'no configuration file passed' if ARGV.empty?
 
 herpes = Herpes.load(*ARGV)
 
-END {
-	herpes.stop
+%w[TERM INT HUP].each {|sig|
+	trap sig do
+		herpes.stop
+	end
 }
 
 herpes.start
