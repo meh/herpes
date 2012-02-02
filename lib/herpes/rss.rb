@@ -50,7 +50,7 @@ Herpes::Module.define :rss do
 
 			content = begin
 				open(r.url).read
-			rescue SocketError; end or next
+			rescue Exception; end or next
 
 			RSS::Parser.parse(content, false).tap {|p|
 				p.items.reverse_each {|item|

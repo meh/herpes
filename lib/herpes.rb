@@ -263,18 +263,20 @@ class Herpes
 				callback.gonna_call!
 
 				process {
-					callback.call(self)
+					begin
+						callback.call(self)
+					rescue Exception => e
+						(log_at ? File.open(log_at, ?a) : STDOUT).tap {|f|
+							f.write "[#{Time.now}] "
+							f.write "From: #{caller[0, 1].join "\n"}\n"
+							f.write "#{e.class}: #{e.message}\n"
+							f.write e.backtrace.to_a.join "\n"
+							f.write "\n\n"
+						}
+					end
 				}
 			}
 		end
-	rescue Exception => e
-		File.open(log_at, ?a) {|f|
-		  f.write "[#{Time.now}] "
-			f.write "From: #{caller[0, 1].join "\n"}\n"
-			f.write "#{e.class}: #{e.message}\n"
-			f.write e.backtrace.to_a.join "\n"
-			f.write "\n\n"
-		} if log_at
 	ensure
 		save
 
