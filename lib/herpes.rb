@@ -237,6 +237,8 @@ class Herpes
 	end
 
 	def until_next
+		return 0 unless running?
+
 		callbacks = @callbacks.reject(&:calling?).reject(&:gonna_call?)
 
 		return if callbacks.empty?
@@ -254,6 +256,8 @@ class Herpes
 
 		while running?
 			sleep until_next
+
+			break unless running?
 
 			@callbacks.select {|callback|
 				callback.next_in <= 0 && !(callback.gonna_call? || callback.calling?)
@@ -284,6 +288,8 @@ class Herpes
 	end
 
 	def stop!
+		return unless running?
+
 		@running = false
 
 		wake_up
@@ -293,7 +299,5 @@ class Herpes
 
 	def stop
 		stop!
-
-		sleep 0.01 until stopped?
 	end
 end
