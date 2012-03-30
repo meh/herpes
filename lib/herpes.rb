@@ -78,14 +78,13 @@ class Herpes
 		new.load(*path)
 	end
 
-	include Awakenable
 	extend Forwardable
 
 	attr_reader    :modules
 	def_delegators :@pool, :do, :process
 
 	def initialize
-		@pool    = ThreadPool.new
+		@pool    = ThreadPool.new(5)
 		@modules = []
 
 		@before   = Hash.new { |h, k| h[k] = [] }
@@ -294,10 +293,26 @@ class Herpes
 
 		wake_up
 
-		@pool.kill
+		@pool.shutdown
 	end
 
 	def stop
 		stop!
+	end
+
+	def sleep (time = nil)
+		@awakenable ||= IO.pipe
+
+		begin
+			@awakenable.first.read_nonblock 2048
+		rescue Errno::EAGAIN; end
+
+		IO.select([@awakenable.first], nil, nil, time)
+	end
+
+	def wake_up
+		@awakenable ||= IO.pipe
+
+		@awakenable.last.write 'x'
 	end
 end
